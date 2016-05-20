@@ -86,6 +86,6 @@ start(function(err, server) {
   }
   server.listen(port, function(err) {
     if (err) console.log('ERROR: ', err);
-    log.info('Bitcore Wallet Service running on port ' + port);
+    log.info('Digicore Wallet Service running on port ' + port);
   });
 });

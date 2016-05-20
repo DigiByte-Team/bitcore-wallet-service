@@ -10,7 +10,7 @@ var log = require('npmlog');
 log.debug = log.verbose;
 log.level = 'info';
 
-var Bitcore = require('bitcore-lib');
+var Digicore = require('digicore-lib');
 
 var Common = require('../../lib/common');
 var Utils = Common.Utils;
@@ -1304,7 +1304,7 @@ describe('Wallet service', function() {
     };
 
     beforeEach(function() {
-      reqPrivKey = new Bitcore.PrivateKey();
+      reqPrivKey = new Digicore.PrivateKey();
       var requestPubKey = reqPrivKey.toPublicKey();
 
       var xPrivKey = TestData.copayers[0].xPrivKey_44H_0H_0H;
@@ -1365,7 +1365,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           server.getBalance(res.wallet.walletId, function(err, bal) {
             should.not.exist(err);
-            var privKey = new Bitcore.PrivateKey();
+            var privKey = new Digicore.PrivateKey();
             (getAuthServer(opts.copayerId, privKey, function(err, server2) {
               err.code.should.equal('NOT_AUTHORIZED');
               done();
@@ -2141,7 +2141,7 @@ describe('Wallet service', function() {
           server.createTxLegacy(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
-            var t = txp.getBitcoreTx().toObject();
+            var t = txp.getDigicoreTx().toObject();
             t.outputs.length.should.equal(1);
             t.outputs[0].satoshis.should.equal(max * 1e8);
             done();
@@ -2372,7 +2372,7 @@ describe('Wallet service', function() {
               var estimatedFee = 5000 * 410 / 1000; // fully signed tx should have about 410 bytes
               tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
 
-              // Sign it to make sure Bitcore doesn't complain about the fees
+              // Sign it to make sure Digicore doesn't complain about the fees
               var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
               server.signTx({
                 txProposalId: tx.id,
@@ -2461,18 +2461,18 @@ describe('Wallet service', function() {
           server.createTxLegacy(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
-            var bitcoreTx = tx.getBitcoreTx();
-            bitcoreTx.outputs.length.should.equal(1);
-            bitcoreTx.outputs[0].satoshis.should.equal(tx.amount);
+            var digicoreTx = tx.getDigicoreTx();
+            digicoreTx.outputs.length.should.equal(1);
+            digicoreTx.outputs[0].satoshis.should.equal(tx.amount);
             done();
           });
         });
       });
 
-      it('should fail gracefully when bitcore throws exception on raw tx creation', function(done) {
+      it('should fail gracefully when digicore throws exception on raw tx creation', function(done) {
         helpers.stubUtxos(server, wallet, [10], function() {
-          var bitcoreStub = sinon.stub(Bitcore, 'Transaction');
-          bitcoreStub.throws({
+          var digicoreStub = sinon.stub(Digicore, 'Transaction');
+          digicoreStub.throws({
             name: 'dummy',
             message: 'dummy exception'
           });
@@ -2480,7 +2480,7 @@ describe('Wallet service', function() {
           server.createTxLegacy(txOpts, function(err, tx) {
             should.exist(err);
             err.message.should.equal('dummy exception');
-            bitcoreStub.restore();
+            digicoreStub.restore();
             done();
           });
         });
@@ -2611,7 +2611,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(txp);
 
-            var t = txp.getBitcoreTx().toObject();
+            var t = txp.getDigicoreTx().toObject();
             t.outputs.length.should.equal(2);
             _.sum(t.outputs, 'satoshis').should.equal(max * 1e8);
             done();
@@ -2990,7 +2990,7 @@ describe('Wallet service', function() {
         });
       });
       it('should accept a tx proposal signed with a custom key', function(done) {
-        var reqPrivKey = new Bitcore.PrivateKey();
+        var reqPrivKey = new Digicore.PrivateKey();
         var reqPubKey = reqPrivKey.toPublicKey().toString();
 
         var xPrivKey = TestData.copayers[0].xPrivKey_44H_0H_0H;
@@ -3154,7 +3154,7 @@ describe('Wallet service', function() {
             tx.amount.should.equal(helpers.toSatoshi(0.8));
             should.not.exist(tx.feePerKb);
             tx.fee.should.equal(1000e2);
-            var t = tx.getBitcoreTx();
+            var t = tx.getDigicoreTx();
             t.getFee().should.equal(1000e2);
             t.getChangeOutput().satoshis.should.equal(3e8 - 0.8e8 - 1000e2);
             done();
@@ -3177,7 +3177,7 @@ describe('Wallet service', function() {
             should.not.exist(tx.changeAddress);
             tx.amount.should.equal(3e8 - tx.fee);
 
-            var t = tx.getBitcoreTx();
+            var t = tx.getDigicoreTx();
             t.getFee().should.equal(tx.fee);
             should.not.exist(t.getChangeOutput());
             t.toObject().inputs.length.should.equal(tx.inputs.length);
@@ -3200,7 +3200,7 @@ describe('Wallet service', function() {
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
-            var t = txp.getBitcoreTx();
+            var t = txp.getDigicoreTx();
             var changeOutput = t.getChangeOutput().satoshis;
             var outputs = _.without(_.pluck(t.outputs, 'satoshis'), changeOutput);
 
@@ -3210,7 +3210,7 @@ describe('Wallet service', function() {
               should.not.exist(err);
               should.exist(txp);
 
-              t = txp.getBitcoreTx();
+              t = txp.getDigicoreTx();
               changeOutput = t.getChangeOutput().satoshis;
               outputs = _.without(_.pluck(t.outputs, 'satoshis'), changeOutput);
 
@@ -3662,7 +3662,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             txp.inputs.length.should.equal(1);
             (_.sum(txp.inputs, 'satoshis') - txp.outputs[0].amount - txp.fee).should.equal(0);
-            var changeOutput = txp.getBitcoreTx().getChangeOutput();
+            var changeOutput = txp.getDigicoreTx().getChangeOutput();
             should.not.exist(changeOutput);
             done();
           });
@@ -3741,7 +3741,7 @@ describe('Wallet service', function() {
       server.createTx(txOpts, function(err, tx) {
         should.not.exist(err);
         should.exist(tx);
-        var t = tx.getBitcoreTx();
+        var t = tx.getDigicoreTx();
         t.toObject().inputs.length.should.equal(info.inputs.length);
         t.getFee().should.equal(info.fee);
         should.not.exist(t.getChangeOutput());
@@ -6329,7 +6329,7 @@ describe('Wallet service', function() {
                 should.not.exist(err);
                 tx.fee.should.equal(5000);
 
-                // Sign it to make sure Bitcore doesn't complain about the fees
+                // Sign it to make sure Digicore doesn't complain about the fees
                 var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
                 server.signTx({
                   txProposalId: tx.id,
